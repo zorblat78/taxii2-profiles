@@ -1,0 +1,111 @@
+{
+  "allow_additional": false,
+  "object_limits": {
+    "attack-pattern": {
+      "min_count": 1,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "attack",
+          "ids": [
+            "attack", "all"
+          ],
+          "min_count": 1,
+          "max_count": null
+        }
+      ]
+    },
+    "sighting": {
+      "min_count": 1,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "sighting",
+          "ids": [
+            "sighting", "all"
+          ],
+          "min_count": 1,
+          "max_count": null
+        }
+      ]
+    },
+    "observed-data": {
+      "min_count": 1,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "observation",
+          "ids": [
+            "observation", "all"
+          ],
+          "min_count": 1,
+          "max_count": null
+        }
+      ]
+    },
+    "email-addr": {
+      "min_count": 1,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "email",
+          "ids": [
+            "sco", "all"
+          ],
+          "min_count": 1,
+          "max_count": null
+        }
+      ]
+    },
+    "user-account": {
+      "min_count": 1,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "email",
+          "ids": [
+            "sco", "all"
+          ],
+          "min_count": 1,
+          "max_count": null
+        }
+      ]
+    },
+    "report": {
+      "min_count": 1,
+      "max_count": null
+    }
+  },
+  "embedded_references": [
+    {
+      "id": "observation",
+      "coverage": "covered",
+      "property_path": "object_refs",
+      "rule_type": "list",
+      "target_ids": [
+        "sco"
+      ]
+    },
+    {
+      "id": "sighting",
+      "coverage": "covered",
+      "optional": true,
+      "property_path": "observed_data_refs",
+      "rule_type": "list",
+      "target_ids": [
+        "observation"
+      ]
+    },
+    {
+      "id": "sighting",
+      "coverage": "covered",
+      "allow_additional": true,
+      "optional": true,
+      "property_path": "sighting_of_ref",
+      "rule_type": "single",
+      "target_ids": [
+        "attack"
+      ]
+    }
+  ]
+}

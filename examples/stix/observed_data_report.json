@@ -1,0 +1,128 @@
+{
+    "type": "bundle",
+    "id": "bundle--f607171d-3b62-40ac-a00b-84b5afc44d5f",
+    "objects": [
+        {
+            "type": "email-addr",
+            "spec_version": "2.1",
+            "id": "email-addr--872bd204-384b-548b-a2d2-24eee3b48fe8",
+            "value": "evil@decryptyourstuff.zip"
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--c5749c43-eea3-4492-8656-ba3db320017a",
+            "created": "2022-09-16T01:12:18.951Z",
+            "modified": "2022-09-16T01:12:18.951Z",
+            "first_observed": "2023-05-02T15:13:11Z",
+            "last_observed": "2023-05-02T17:13:15Z",
+            "number_observed": 1,
+            "object_refs": [
+                "email-addr--872bd204-384b-548b-a2d2-24eee3b48fe8"
+            ]
+        },
+        {
+            "type": "sighting",
+            "spec_version": "2.1",
+            "id": "sighting--4d051911-6275-4ec0-bf10-2b87348b8877",
+            "created": "2022-09-16T01:12:18.951Z",
+            "modified": "2022-09-16T01:12:18.951Z",
+            "sighting_of_ref": "attack-pattern--79999146-514b-4793-b0e1-4b82ebbf1122",
+            "observed_data_refs": [
+                "observed-data--c5749c43-eea3-4492-8656-ba3db320017a"
+            ]
+        },
+        {
+            "type": "attack-pattern",
+            "spec_version": "2.1",
+            "id": "attack-pattern--79999146-514b-4793-b0e1-4b82ebbf1122",
+            "created": "2023-05-02T20:00:00.0002Z",
+            "modified": "2023-05-02T20:00:00.0002Z",
+            "name": "Negotiation over Email",
+            "description": "Ransomware distributors provide an email address to contact them to begin negotiations for payment."
+        },
+        {
+            "type": "user-account",
+            "spec_version": "2.1",
+            "id": "user-account--8692770d-34f4-5681-8628-810d62dbfcb6",
+            "account_login": "qrzTalker4514",
+            "account_type": "fake-app",
+            "display_name": "Ransom Service Desk"
+        },
+        {
+            "type": "observed-data",
+            "spec_version": "2.1",
+            "id": "observed-data--801636c1-7602-4c49-9a46-22f00b821acf",
+            "created": "2022-09-16T01:12:18.951Z",
+            "modified": "2022-09-16T01:12:18.951Z",
+            "first_observed": "2023-05-02T15:13:11Z",
+            "last_observed": "2023-05-02T17:13:15Z",
+            "number_observed": 1,
+            "object_refs": [
+                "user-account--8692770d-34f4-5681-8628-810d62dbfcb6"
+            ]
+        },
+        {
+            "type": "sighting",
+            "spec_version": "2.1",
+            "id": "sighting--e3d81ade-d1b0-4cf0-9450-02b08adb1564",
+            "created": "2022-09-16T01:12:18.951Z",
+            "modified": "2022-09-16T01:12:18.951Z",
+            "sighting_of_ref": "attack-pattern--09a5e59c-2a1d-447e-b888-d10a01a68404",
+            "observed_data_refs": [
+                "observed-data--801636c1-7602-4c49-9a46-22f00b821acf"
+            ]
+        },
+        {
+            "type": "attack-pattern",
+            "spec_version": "2.1",
+            "id": "attack-pattern--09a5e59c-2a1d-447e-b888-d10a01a68404",
+            "created": "2023-05-02T20:00:00.0002Z",
+            "modified": "2023-05-02T20:00:00.0002Z",
+            "name": "Ransom Negotiation using Well Known App",
+            "description": "Ransomware distributors provide a user's account or channel to negotiate payment with in real time over a well known chat application."
+        },
+        {
+            "type": "sighting",
+            "spec_version": "2.1",
+            "id": "sighting--0fdbad43-a520-447d-a750-37a253f4169e",
+            "created": "2022-09-16T01:12:18.951Z",
+            "modified": "2022-09-16T01:12:18.951Z",
+            "sighting_of_ref": "attack-pattern--51e7da0b-4d6d-4a4a-9a04-05c0bce06edb"
+        },
+        {
+            "type": "attack-pattern",
+            "spec_version": "2.1",
+            "id": "attack-pattern--51e7da0b-4d6d-4a4a-9a04-05c0bce06edb",
+            "created": "2023-05-02T20:00:00.0002Z",
+            "modified": "2023-05-02T20:00:00.0002Z",
+            "name": "Ransom Payment using Cryptocurrency",
+            "description": "Ransomware distributors provide a cryptocurrency address to accept a payment."
+        },
+        {
+            "type": "report",
+            "created": "2023-05-02T20:00:00.0002Z",
+            "modified": "2023-05-02T20:00:00.0002Z",
+            "spec_version": "2.1",
+            "id": "report--41d577e5-7204-4ce3-a189-e8c618271bff",
+            "name": "Ransomware Incident Example",
+            "report_types": [
+                "observed-data"
+            ],
+            "published": "2023-05-02T20:00:00.0002Z",
+            "object_refs": [
+                "attack-pattern--09a5e59c-2a1d-447e-b888-d10a01a68404",
+                "attack-pattern--51e7da0b-4d6d-4a4a-9a04-05c0bce06edb",
+                "attack-pattern--79999146-514b-4793-b0e1-4b82ebbf1122",
+                "email-addr--872bd204-384b-548b-a2d2-24eee3b48fe8",
+                "observed-data--801636c1-7602-4c49-9a46-22f00b821acf",
+                "observed-data--c5749c43-eea3-4492-8656-ba3db320017a",
+                "sighting--0fdbad43-a520-447d-a750-37a253f4169e",
+                "sighting--4d051911-6275-4ec0-bf10-2b87348b8877",
+                "sighting--e3d81ade-d1b0-4cf0-9450-02b08adb1564",
+                
+                "user-account--8692770d-34f4-5681-8628-810d62dbfcb6"
+            ]
+        }
+    ]
+}

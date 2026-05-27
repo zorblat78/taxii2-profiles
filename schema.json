@@ -1,0 +1,471 @@
+{
+    "$id": "https://tbd.com",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "TAXII Template Schema",
+    "description": "A schema for validating TAXII templates.",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "resolve_external": {
+            "type": "boolean",
+            "default": false,
+            "description": "Indicates whether objects that are referenced in the envelop will be resolved to determine if the envelop is valid. If this is false then all validation will only be performed on the local content of the envelop."
+        },
+        "allow_additional": {
+            "type": "boolean",
+            "default": true,
+            "description": "Indicates whether non-relationship objects not defined in the object_limits property are permitted."
+        },
+        "allow_additional_relationships": {
+            "type": "boolean",
+            "default": true,
+            "description": "Indicates whether non-IDed relationships are allowed."
+        },
+        "object_limits": {
+            "type": "object",
+            "description": "A dictionary of required objects that this template has explicit rules for handling. The keys are the names of the STIX object types. This cannot be used for relationships. Those are mapped using relationship_rules.",
+            "patternProperties": {
+                "^(?!relationship).+": {
+                    "type": "object",
+                    "properties": {
+                        "min_count": {
+                            "type": "integer",
+                            "default": 0,
+                            "minimum": 0,
+                            "description": "The minimum number of instances of the object that must be included in the TAXII template."
+                        },
+                        "max_count": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "default": null,
+                            "description": "The maximum number of instances of the object that can be included in the TAXII template. If objects of this type are explicitly forbidden this should be set to zero."
+                        },
+                        "id_required": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Indicates whether objects of this type must match a rule with a defined 'id'."
+                        },
+                        "id_map": {
+                            "type": "array",
+                            "description": "An array of objects that define the structure of the TAXII template. Each object in the array represents a rule.  Individual objects can only match a single rule.  Matching a rule will provide an object with IDs that allow other objects to reference them in their rules. Rules are processed in the order listed. Objects only are assigned IDs from the first rule they match. This is NOT applied against relationship objects as they relationship_rules to define their IDs.",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "ids",
+                                    "name"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "The name of this this rule used for debugging."
+                                    },
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "minItems": 1
+                                    },
+                                    "min_count": {
+                                        "type": "integer",
+                                        "default": 1,
+                                        "minimum": 0,
+                                        "description": "The minimum number of objects that must match this rule. If this rule is required to be matched by an object in the template this should be set to at least 1."
+                                    },
+                                    "max_count": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "default": null,
+                                        "minimum": 0,
+                                        "description": "The maxium number of objects that must match this rule. If this is null then it is unbounded."
+                                    },
+                                    "required_extensions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "A list of required extensions for this object"
+                                    },
+                                    "property_rules": {
+                                        "type": "object",
+                                        "description": "A dictionary of property rules that must be satisfied for an object to match this rule. The keys are the names of the properties and the values are rule that applies.",
+                                        "patternProperties": {
+                                            ".+": {
+                                                "oneOf": [
+                                                    {
+                                                        "$ref": "#/definitions/PropertyString"
+                                                    },
+                                                    {
+                                                        "$ref": "#/definitions/PropertyStringArray"
+                                                    },
+                                                    {
+                                                        "$ref": "#/definitions/PropertyObjectType"
+                                                    },
+                                                    {
+                                                        "$ref": "#/definitions/PropertyReferenceTypeList"
+                                                    },
+                                                    {
+                                                        "$ref": "#/definitions/PropertyObjectArray"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "relationship_rules": {
+            "type": "array",
+            "description": "A list of rules that define relationship objects that must exist. All rules are processed in order with the first matching rule removing the relationship from subsequent processing by default. If allow_passthrough is set to true for a rule it will be sent to the next rule however.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "ids",
+                    "name",
+                    "source_ids",
+                    "source_coverage",
+                    "target_ids",
+                    "target_coverage"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "The name of this this rule used for debugging."
+                    },
+                    "allow_passthrough": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "If relationships that match this rule should be able to be processed by subsequent rules."
+                    },
+                    "relationship_type": {
+                        "type": ["string", "null"],
+                        "default": "null",
+                        "description": "The STIX relationship_type. If this is null everything matches. Keeping this null is best used as a fallback rule."
+                    },
+                    "source_ids": {
+                        "type": ["array", "null"],
+                        "minItems": 1,
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of rule IDs to match for the source_ref field. If this is null then everything matches which can be used for a fallback rule."
+                    },
+                    "target_ids": {
+                        "type": ["array", "null"],
+                        "minItems": 1,
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "A list of rule IDs to match for the target_ref field. If this is null then everything matches which can be used for a fallback rule."
+                    },
+                    "source_additional": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Indicates whether additional source_refs that do not match the source_ref rule are allowed."
+                    },
+                    "source_coverage": {
+                        "type": "string",
+                        "enum": [
+                            "covered",
+                            "full",
+                            "partial"
+                        ],
+                        "description": "Full means all IDed sources and targets must have a relationships. Partial means that every source and target have at least 1 relationship, but they do not all have to relate. Partial means only some of the ID must have relationships."
+                    },
+                    "source_max": {
+                        "type": ["integer", "null"],
+                        "default": null,
+                        "minimum": 0,
+                        "description": "The maximum number of relationships matching this rule the source can have. If this is null there is no limit."
+                    },
+                    "target_coverage": {
+                        "type": "string",
+                        "enum": [
+                            "covered",
+                            "full",
+                            "partial"
+                        ],
+                        "description": "Full means all IDed sources and targets must have a relationships. Partial means that every source and target have at least 1 relationship, but they do not all have to relate. None means no relationship is required."
+                    },
+                    "target_additional": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Indicates whether additional target_refs that do not match the target_ref rule are allowed."
+                    },
+                    "target_max": {
+                        "type": ["integer", "null"],
+                        "default": null,
+                        "minimum": 0,
+                        "description": "The maximum number of relationships matching this rule the target can have. If this is null there is no limit."
+                    },
+                    "property_rules": {
+                        "type": "object",
+                        "description": "A dictionary of property rules that must be satisfied for an object to match this rule. The keys are the names of the properties and the values are rule that applies.",
+                        "patternProperties": {
+                            ".+": {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/definitions/PropertyString"
+                                    },
+                                    {
+                                        "$ref": "#/definitions/PropertyStringArray"
+                                    },
+                                    {
+                                        "$ref": "#/definitions/PropertyObjectType"
+                                    },
+                                    {
+                                        "$ref": "#/definitions/PropertyReferenceTypeList"
+                                    },
+                                    {
+                                        "$ref": "#/definitions/PropertyObjectArray"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },   
+        "embedded_references": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "A dictionary of rules for objects that can be referenced by other rules. The keys are the path to the property holding the reference.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "The rule ID that this applies to"
+                    },
+                    "optional": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "If the property must be present, default false"
+                    },
+                    "coverage": {
+                        "type": "string",
+                        "enum": [
+                            "partial",
+                            "covered",
+                            "full"
+                        ],
+                        "description": "If all references must match each item matching the related ID found in this rule or subrules. 'partial' indicates not all IDed elements must match. 'full' indicates that every object matching this rule reference all target objects. 'covered' indicates that every target object must be referenced by at least one object matching this rule."
+                    },
+                    "allow_additional": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Indicates whether references that do not match the rule are allowed. When false every reference must match values."
+                    },
+                    "property_path": {
+                        "type": "string",
+                        "description": "The path to the embedded reference."
+                    },
+                    "rule_type": {
+                        "type": "string",
+                        "enum": [
+                            "single",
+                            "list"
+                        ]
+                    },
+                    "target_ids": {
+                        "type": "array",
+                        "minContains": 1,
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The IDs of the rules that this reference must match."
+                    }
+                },
+                "required": [
+                    "id",
+                    "coverage",
+                    "property_path",
+                    "rule_type",
+                    "target_ids"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    "definitions": {
+        "PropertyString": {
+            "properties": {
+                "rule_type": {
+                    "type": "string",
+                    "const": "enum"
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rule_type",
+                "values"
+            ],
+            "allowAdditionalProperties": false
+        },
+        "PropertyStringArray": {
+            "properties": {
+                "rule_type": {
+                    "type": "string",
+                    "const": "string_array"
+                },
+                "allow_additional": {
+                    "type": "boolean",
+                    "description": "Indicates whether non-matching strings are allowed in the array."
+                },
+                "elements": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "value": {
+                                "type": "string"
+                            },
+                            "required": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Indicates whether this value is required for a match."
+                            }
+                        },
+                        "required": [
+                            "value"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rule_type",
+                "allow_additional",
+                "elements"
+            ],
+            "allowAdditionalProperties": false
+        },
+        "PropertyObjectType": {
+            "description": "The _ref property must resolve to an object of one of the listed in value.",
+            "properties": {
+                "rule_type": {
+                    "type": "string",
+                    "const": "referenced_type"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "rule_type",
+                "value"
+            ],
+            "allowAdditionalProperties": false
+        },
+        "PropertyReferenceTypeList": {
+            "description": "The _refs property must resolve to at least one of the listed value.",
+            "properties": {
+                "rule_type": {
+                    "type": "string",
+                    "const": "reference_list"
+                },
+                "allow_additional": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Indicates whether non-matching references are allowed in the array.  When false every reference must match values.  When set to true only required_matches must match."
+                },
+                "required_matches": {
+                    "type": "integer",
+                    "default": 1,
+                    "mininum": 1
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rule_type",
+                "values"
+            ],
+            "allowAdditionalProperties": false
+        },
+        "PropertyObjectArray": {
+            "properties": {
+                "rule_type": {
+                    "type": "string",
+                    "const": "object_array"
+                },
+                "allow_additional": {
+                    "type": "boolean",
+                    "description": "Indicates whether non-matching objects are allowed in the array."
+                },
+                "object_rules": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "property_rules": {
+                                "type": "object",
+                                "patternProperties": {
+                                    ".+": {
+                                        "oneOf": [
+                                            {
+                                                "$ref": "#/definitions/PropertyString"
+                                            },
+                                            {
+                                                "$ref": "#/definitions/PropertyStringArray"
+                                            },
+                                            {
+                                                "$ref": "#/definitions/PropertyObjectType"
+                                            },
+                                            {
+                                                "$ref": "#/definitions/PropertyReferenceTypeList"
+                                            },
+                                            {
+                                                "$ref": "#/definitions/PropertyObjectArray"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "property_rules"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "rule_type",
+                "object_rules"
+            ],
+            "allowAdditionalProperties": false
+        }
+    }
+}

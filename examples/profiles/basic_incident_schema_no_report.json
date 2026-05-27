@@ -1,0 +1,160 @@
+{
+  "allow_additional": false,
+  "object_limits": {
+    "incident": {
+      "min_count": 1,
+      "max_count": 1,
+      "id_map": [
+        {
+          "name": "incident-1",
+          "ids": [
+            "incident-1"
+          ],
+          "min_count": 1,
+          "max_count": 1,
+          "required_extensions": [
+            "extension-definition--ef765651-680c-498d-9894-99799f2fa126"
+          ],
+          "property_rules": {
+            "target_ref": {
+              "rule_type": "reference_list",
+              "values": [
+                "impact-availability",
+                "impact-confidentiality"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "identity": {
+      "min_count": 1,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "CAGE Identity",
+          "ids": [
+            "impacted-entity"
+          ],
+          "min_count": 1,
+          "max_count": null,
+          "property_rules": {
+            "external_references": {
+              "rule_type": "object_array",
+              "allow_additional": true,
+              "object_rules": [
+                {
+                  "property_rules": {
+                    "source_name": {
+                      "rule_type": "enum",
+                      "values": [
+                        "cage_code"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "impact": {
+      "min_count": 2,
+      "max_count": null,
+      "id_map": [
+        {
+          "name": "confidentiality impact",
+          "ids": [
+            "impact-confidentiality"
+          ],
+          "min_count": 1,
+          "max_count": null,
+          "property_rules": {
+            "impact_category": {
+              "rule_type": "enum",
+              "values": [
+                "confidentiality"
+              ]
+            },
+            "impacted_refs": {
+              "rule_type": "reference_list",
+              "values": [
+                "impacted-entity"
+              ]
+            }
+          }
+        },
+        {
+          "name": "availability impact",
+          "ids": [
+            "impact-availability"
+          ],
+          "min_count": 1,
+          "max_count": null,
+          "property_rules": {
+            "impact_category": {
+              "rule_type": "enum",
+              "values": [
+                "availability"
+              ]
+            }
+          }
+        },
+        {
+          "name": "other impacts",
+          "ids": [
+            "impact-other"
+          ],
+          "min_count": 0,
+          "max_count": null
+        }
+      ]
+    },
+    "report": {
+      "min_count": 0,
+      "max_count": 0
+    },
+    "task": {},
+    "event": {},
+    "email-addr": {},
+    "observed-data": {},
+    "sighting": {},
+    "attack-pattern": {},
+    "user-account": {}
+  },
+  "relationship_rules": [
+    {
+      "name": "relationship from incident impacting identity",
+      "ids": ["relationships"],
+      "relationship_type": "impacts",
+      "source_ids": ["incident-1"],
+      "target_ids": ["impacted-entity"],
+      "source_coverage": "full",
+      "target_coverage": "partial"
+    },
+    {
+      "name": "other relationships",
+      "ids": ["relationships"],
+      "relationship_type": null,
+      "source_ids": null,
+      "target_ids": null,
+      "source_coverage": "partial",
+      "target_coverage": "partial"
+    }
+  ],
+  "embedded_references": [
+    {
+      "id": "incident-1",
+      "coverage": "full",
+      "optional": false,
+      "property_path": "extensions.extension-definition--ef765651-680c-498d-9894-99799f2fa126.impact_refs",
+      "rule_type": "list",
+      "target_ids": [
+        "impact-availability",
+        "impact-confidentiality",
+        "impact-other"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Each folder in this contains a single schema along with a set of test TAXII submissions which should either be accepted or rejected.
