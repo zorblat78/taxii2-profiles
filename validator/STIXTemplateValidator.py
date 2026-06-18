@@ -279,6 +279,9 @@ class STIXTemplateValidator:
             ref_id = obj.get(key, "").split("--")[0]
             result = ref_id in property_rule.get("value", "")
         elif property_rule.get("rule_type") == "reference_list":
+            if key not in obj:
+                result = False
+            
             for ref_id in obj.get(key, []):
                 ref_type = ref_id.split("--")[0]
                 

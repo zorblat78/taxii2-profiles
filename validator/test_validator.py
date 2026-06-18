@@ -58,7 +58,7 @@ def test_basic_incident_schema_incident_ransom_report():
     
     actual_valid, actual_errors = validate_stix_document(validator, document_path)
     
-    assert actual_valid is True, (
+    assert ProfileValidationError.to_string_list(actual_errors) == [], (
         f'Expected incident_ransom_report.json to be accepted by basic_incident_schema.json '
         f'but got rejected. Errors: {actual_errors}'
     )
