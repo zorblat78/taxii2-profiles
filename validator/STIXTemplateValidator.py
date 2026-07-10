@@ -117,10 +117,11 @@ class STIXTemplateValidator:
         # This will add errors if forbidden types are discovered
         objects_by_type = self._load_objects_by_type(stix_objects, errors)
         
-        # pull out all relationships and store them separately for relationship based rules
-        relationships_by_type = {}
+        # pull out all relationships and store them in a dictionary for easy checking
+        relationship_lookup: Dict[str,List[Dict[str, Any]]] = {}
         for relationship in objects_by_type.pop("relationship", []):
-            relationships_by_type.setdefault(relationship["relationship_type"], []).append(relationship)
+            key = f"{relationship.get('source_ref')}_{relationship.get('target_ref')}"
+            relationship_lookup.setdefault(key, []).append(relationship)
 
         # if there were no errors based on the type load the objects are then processed by ID and errors are added if discovered
         if len(errors) == 0:
@@ -128,8 +129,8 @@ class STIXTemplateValidator:
                 object_list = objects_by_type.get(obj_type, [])
                 self._load_objects_by_id(objects_by_id, obj_type, object_list, errors)
 
-        # We now load relationships which will update the objects_by_id dictionary so that embedded rules can reference relationship object
-        # TODO: Add call to _validate_relationships
+            # We now load relationships which will update the objects_by_id dictionary so that embedded rules can reference relationship object
+            errors.extend(self._validate_relationships(objects_by_id, relationship_lookup))
 
         # As the final step check embedded relationships
         if len(errors) == 0:
@@ -301,12 +302,122 @@ class STIXTemplateValidator:
         
         return result
     
-    def _validate_relationships(self, stix_objects: List[Dict[str, Any]], objects_by_id: Dict[str, List[Dict[str, Any]]]) -> List[ProfileValidationError]:
+    def _pop_missing(self, missing_dict: Dict[str, Set[str]], primary_id: str, other_id: str) -> None:
+        if primary_id in missing_dict:
+            missing_dict[primary_id].discard(other_id)
+            if len(missing_dict[primary_id]) == 0:
+                del missing_dict[primary_id]
+
+        return missing_dict
+    
+    def _convert_ids(self, rule_ids: List[str] | None, all_obj_ids: Set[str], objects_by_id: Dict[str, List[Dict[str, Any]]]) -> Set[str]:
+        if rule_ids is None:
+            return all_obj_ids
+
+        converted_ids = set()        
+        for rule_id in rule_ids:
+            all_obj_ids.update([obj.get("id") for obj in objects_by_id[rule_id]])
+
+        return converted_ids
+
+    def _validate_relationships(
+        self,
+        objects_by_id: Dict[str, List[Dict[str, Any]]],
+        relationship_lookup: Dict[str, List[Dict[str, Any]]]
+    ) -> List[ProfileValidationError]:
         errors: List[ProfileValidationError] = []
+
+        all_obj_ids = set()
+        for rule_id in objects_by_id.keys(): # get this before we start adding relationships since they would show up here
+            all_obj_ids.update([obj.get("id") for obj in objects_by_id[rule_id]])
+
         for rule in self.relationship_rules:
-            pass
+            source_refs = self._convert_ids(rule.get("source_ids", None), all_obj_ids, objects_by_id)
+            target_refs = self._convert_ids(rule.get("target_ids", None), all_obj_ids, objects_by_id)
+            property_rules = rule.get("property_rules", {})
+            matched_relationships: List[Dict[str, Any]] = []
+
+            # if no coverage we can just use an empty dict otherwise we either track an empty set or everything for all
+            missing_sources = {}
+            missing_targets = {}
+
+            if rule["source_coverage"] == "covered" :
+                missing_sources = dict.fromkeys(source_refs, set())
+            elif rule["source_coverage"] == "full":
+                missing_sources = dict.fromkeys(source_refs, set(target_refs))
+
+            if rule["target_coverage"] == "covered":
+                missing_targets = dict.fromkeys(target_refs, set())
+            elif rule["target_coverage"] == "full":
+                missing_targets = dict.fromkeys(target_refs, set(source_refs))
+
+            # if a rule doesn't filter based on source or target ID then just scan everything instead of wasting time
+            if rule.get("target_ids", None) is None and rule.get("source_ids", None) is None:
+                for relationship_list in relationship_lookup.values():
+                    for relationship in relationship_list:
+                        if self._relationship_matches_rule(relationship, property_rules):
+                            matched_relationships.append(relationship)
+                            missing_sources = self._pop_missing(missing_sources, relationship.get("source_ref"), relationship.get("target_ref"))
+                            missing_targets = self._pop_missing(missing_targets, relationship.get("target_ref"), relationship.get("source_ref"))
+            else:      
+                for source_ref in source_refs:
+                    for target_ref in target_refs:
+                        for relationship in relationship_lookup.get(f"{source_ref}_{target_ref}", []):
+                            if self._relationship_matches_rule(relationship, property_rules):
+                                matched_relationships.append(relationship)
+                                missing_sources = self._pop_missing(missing_sources, relationship.get("source_ref"), relationship.get("target_ref"))
+                                missing_targets = self._pop_missing(missing_targets, relationship.get("target_ref"), relationship.get("source_ref"))
+
+                for rule_id in rule.get("ids", []):
+                    for relationship in matched_relationships:
+                        objects_by_id.setdefault(rule_id, []).append(relationship)
+
+            for id in missing_sources.keys():
+                errors.append(ProfileValidationError(
+                    error_type='missing_relationship',
+                    obj_type='relationship',
+                    rule_name=rule.get("name", "<unnamed>"),
+                    stix_id=id,
+                    details={
+                        'missing_sources': {k: sorted(list(v)) for k, v in missing_sources.items()}
+                    }
+                ))
+
+            for id in missing_targets.keys():
+                errors.append(ProfileValidationError(
+                    error_type='missing_relationship',
+                    obj_type='relationship',
+                    rule_name=rule.get("name", "<unnamed>"),
+                    stix_id=id,
+                    details={
+                        'missing_targets': {k: sorted(list(v)) for k, v in missing_targets.items()}
+                    }
+                ))
 
         return errors
+
+    def _relationship_matches_rule(
+        self,
+        relationship: Dict[str, Any],
+        property_rules: Dict[str, Any],
+    ) -> bool:
+        
+        for key, rule in property_rules.items():
+            if not self._validate_property_rule(relationship, key, rule):
+                return False
+
+        return True
+
+    def _relationship_ref_matches_ids(
+        self,
+        ref_id: str,
+        rule_ids: List[str],
+        objects_by_id: Dict[str, List[Dict[str, Any]]]
+    ) -> bool:
+        for rule_id in rule_ids:
+            if any(obj.get("id") == ref_id for obj in objects_by_id.get(rule_id, [])):
+                return True
+        return False
 
     def _validate_embedded_references(self, stix_objects: List[Dict[str, Any]], objects_by_id: Dict[str, List[Dict[str, Any]]]) -> List[ProfileValidationError]:
         errors: List[ProfileValidationError] = []
